@@ -1,11 +1,17 @@
-# Future deployment
+# Render deployment
 
-No updated website was published for this delivery. The package runs locally by default.
+Use a Render Web Service with runtime Node, plan Free and region Singapore.
 
-`npm ci && npm run build` produces the ESM Worker entrypoint `dist/server/index.js` with embedded frontend assets. It exports the standard `fetch(request, env)` handler. `dist/.openai/hosting.json` retains the existing Sites project identity; the contract addresses are in `app/dist/chain-config.mjs`.
+Build command: npm ci --include=dev && npm run build
+Start command: npm run start:render
+Health check: /api/health
 
-A future compatible Worker host must configure `MEADOW_REWARD_SIGNER_KEY` as a server-only secret. Optional `MEADOW_RPC_URL` selects a Sepolia RPC. The key must correspond to the already-deployed contract verifier; a new random key will not work. Configure secrets using the host environment, never Git or frontend assets.
+Set NODE_VERSION=24 and NODE_ENV=production. Render supplies PORT, RENDER and RENDER_EXTERNAL_URL automatically.
 
-Routes: `GET /api/health` reports public contract configuration and whether a verifier is configured; `POST /api/replay` validates game traces. The local runner binds only to `127.0.0.1`. It is intended for local access; use the Worker entrypoint for future hosting.
+Set MEADOW_REWARD_SIGNER_KEY in the service environment. It must match the reward verifier in app/dist/chain-config.mjs. Keep the existing key server-side and out of the repository. Optional MEADOW_RPC_URL selects another Sepolia HTTPS RPC.
 
-Verify the contract addresses and test receipts in `app/deployment/` before publishing. Keep `.env`, private keys, runtime data, `node_modules`, compiler caches and teaching packages out of public archives. Rebuilding this UI does not require deploying new contracts.
+The Node adapter at app/tools/start-render.mjs serves the same compiled worker and static assets as the local game. It binds to 0.0.0.0:$PORT, preserves HTTPS origins through Render's reverse proxy, and passes the visitor address to the worker's rate limits.
+
+Free services sleep after 15 minutes without requests and need about a minute to wake. Browser saves belong to the public game domain; TOM and NFTs remain on Ethereum Sepolia. Review https://render.com/docs/free for shared usage limits.
+
+After the service is created, pushes to main trigger deployment automatically.
